@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El skill /teach — enseñar como enseña la ciencia, no como adivina un chatbot — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #f59e0b;
+  --cool: #8b5cf6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>El skill /teach — enseñar como enseña la ciencia, no como adivina un chatbot</h1>
+  <p class="ls-intro">Repaso del video sobre /teach, el skill de Matt Pocock que convierte a Claude en un tutor con currículo, basado en ciencia del aprendizaje.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Diseñar lecciones que se queden: conocimiento fácil de recibir, habilidad construida con esfuerzo, y un rastro que recuerda al alumno.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>Sentir que entendiste (fluidez) no es haberlo aprendido (retención). /teach está diseñado para no engañarte con esa sensación.</li><li>Para conocimiento, la dificultad es el enemigo; para habilidad, la dificultad es la herramienta.</li><li>Una sesión de /teach deja huella: misión, glosario y registros de aprendizaje que recuerdan dónde estás.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿Cuál es la diferencia entre que un chatbot te explique y que /teach te enseñe?</summary><div class="ls-a">El chatbot optimiza la sensación de entender ahora (fluidez); /teach optimiza la retención en el tiempo, con memoria del alumno, fuentes citadas y dificultad calibrada.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Cuándo la dificultad ayuda y cuándo estorba?</summary><div class="ls-a">Estorba al adquirir conocimiento (consume la memoria de trabajo que necesitas para entender) y ayuda al construir una habilidad (el esfuerzo de recuperar es lo que fija el aprendizaje).</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>¿Por qué un término solo entra al glosario cuando puedes definirlo tú?</summary><div class="ls-a">Porque comprimir un concepto en una definición propia es la prueba de que lo entendiste; escribir la definición ES el aprendizaje, no solo haberlo oído.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Instala el skill /teach desde el repo mattpocock/skills en tu carpeta de skills.</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Define la misión: por qué quieres aprender esto y cómo se ve el éxito (concreto, no abstracto).</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Reúne fuentes confiables en RESOURCES.md antes de enseñar (no de la memoria del modelo).</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Pide una lección de conocimiento: corta, citada, baja dificultad.</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Pide una lección de habilidad: interactiva, con esfuerzo y feedback inmediato.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Deja que registre lo aprendido en learning-records y el glosario.</span></label></li></ol></section>
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">mattpocock/skills (repo)</a><a class="ls-res" href="https://www.mattpocock.com" target="_blank" rel="noopener">Matt Pocock</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>

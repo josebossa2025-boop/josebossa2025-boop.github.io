@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HyperFrames — editas video escribiendo HTML, y tu agente lo hace por ti — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #e8622c;
+  --cool: #22d3ee;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>HyperFrames — editas video escribiendo HTML, y tu agente lo hace por ti</h1>
+  <p class="ls-intro">Repaso del video sobre HyperFrames: el framework open-source de HeyGen para hacer videos escribiendo HTML, renderizados a MP4 — y editables por un agente de IA.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Hacer un video con HyperFrames: escribir una composición en HTML y renderizarla a MP4, con tu agente haciendo el trabajo.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>HyperFrames convierte una composición en HTML/CSS + animación en un MP4, pintándola frame por frame en Chrome headless y uniéndola con FFmpeg.</li><li>Como es HTML (no una línea de tiempo cerrada), un agente como Claude Code lo puede escribir y editar de punta a punta.</li><li>El render es determinista: mismo input → mismo MP4. Reproducible y automatizable.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿En qué escribes un video con HyperFrames?</summary><div class="ls-a">En HTML/CSS con animación (GSAP, CSS, Lottie…), usando atributos como data-start y data-duration para el timing. Eso se renderiza a MP4.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Por qué un agente de IA puede editarlo de punta a punta?</summary><div class="ls-a">Porque la composición es HTML, que los agentes ya saben leer y escribir. No hay timeline propietaria: le describes el video en lenguaje natural y él escribe el código.</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>¿Qué significa que el render sea determinista y por qué importa?</summary><div class="ls-a">Que el mismo input produce siempre el mismo MP4. Importa porque hace el resultado reproducible y apto para CI y automatización.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Ten Node 22 y FFmpeg instalados (requisitos del framework).</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Crea el proyecto: npx hyperframes init &lt;nombre&gt;.</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Edita la composición en index.html / compositions/ (HTML + animación).</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Previsualiza en el navegador: npm run dev (recarga en vivo).</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Valida la composición: npm run check.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Renderiza el MP4: npm run render. Agrega bloques listos con npx hyperframes add &lt;bloque&gt;.</span></label></li></ol></section>
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://github.com/heygen-com/hyperframes" target="_blank" rel="noopener">Repo heygen-com/hyperframes</a><a class="ls-res" href="https://hyperframes.heygen.com" target="_blank" rel="noopener">Docs oficiales</a><a class="ls-res" href="https://www.youtube.com/watch?v=GBlJEJUlUmg" target="_blank" rel="noopener">Video tutorial (YouTube)</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wispr Flow — dictado con IA que edita, aprende y transforma — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #f59e0b;
+  --cool: #14b8a6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>Wispr Flow — dictado con IA que edita, aprende y transforma</h1>
+  <p class="ls-intro">Repaso del video sobre Wispr Flow: dictado con IA que edita, aprende de ti y transforma tu texto en cualquier app.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Dictar en lugar de escribir y producir texto pulido en cualquier app — hasta 4× más rápido que tecleando.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>Wispr Flow convierte tu voz en texto ya pulido, a nivel del sistema operativo, en cualquier app.</li><li>No es dictado: edita (quita muletillas, puntúa), aprende tu vocabulario y transforma el texto por voz.</li><li>El valor real no es la velocidad, es pensar hablando y que el texto salga limpio.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿Cómo explicarías qué es Wispr Flow en una sola frase?</summary><div class="ls-a">Una herramienta de voz a texto con IA: mantienes una tecla, hablas, y pega texto ya pulido en la app que tengas abierta.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Qué hace el diccionario que un dictado normal no hace?</summary><div class="ls-a">Aprende tu jerga, nombres y marcas con el tiempo. Si corriges algo escribiendo encima, lo recuerda solo y se sincroniza entre dispositivos.</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>¿Para qué usarías un Snippet y para qué un Command Mode?</summary><div class="ls-a">Un Snippet expande texto guardado por voz (dices &#x27;mi correo&#x27; y escribe tu email entero). Command Mode transforma texto hablándole: &#x27;resúmelo&#x27;, &#x27;tradúcelo&#x27;, &#x27;pásalo a viñetas&#x27;.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Instala Wispr Flow en tu computadora (Mac o Windows).</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Configura la tecla rápida: Fn en Mac, Ctrl + Win en Windows.</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Abre Gmail o un chat, mantén la tecla, dicta una frase y suéltala.</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Crea tu primer Snippet: por ejemplo &#x27;mi correo&#x27; → tu dirección de email.</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Prueba Command Mode: selecciona un párrafo y di &#x27;resúmelo&#x27;.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Úsalo una semana para dictar tus prompts a la IA en vez de escribirlos.</span></label></li></ol></section>
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://wisprflow.ai" target="_blank" rel="noopener">Wispr Flow (sitio oficial)</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>

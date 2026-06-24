@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecciones · Jose Bossa</title>
+<style>
+:root { --ink:#1a1813; --paper:#fffff8; --muted:#6b655a; --rule:#e2ddd0; --accent:#7c5cff; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--paper); color:var(--ink); font-family:Georgia,"Iowan Old Style",serif; line-height:1.6; }
+.wrap { max-width:42rem; margin:0 auto; padding:4rem 1.5rem 6rem; }
+.eyebrow { font-family:ui-monospace,Menlo,monospace; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:.6rem; }
+h1 { font-size:2.4rem; line-height:1.1; margin-bottom:.5rem; }
+.dek { font-style:italic; color:var(--muted); font-size:1.1rem; margin-bottom:2.6rem; }
+.lesson { display:block; text-decoration:none; color:inherit; border:1px solid var(--rule); border-radius:12px; padding:1.2rem 1.4rem; margin-bottom:1rem; transition:border-color .15s, transform .15s; background:#fffefb; }
+.lesson:hover { border-color:var(--accent); transform:translateY(-2px); }
+.lesson h2 { font-size:1.35rem; margin-bottom:.2rem; }
+.lesson p { color:var(--muted); font-size:.95rem; }
+.lesson .go { font-family:ui-monospace,monospace; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-top:.5rem; display:inline-block; }
+.foot { margin-top:3rem; border-top:1px solid var(--rule); padding-top:1.2rem; color:var(--muted); font-family:ui-monospace,monospace; font-size:.75rem; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Lecciones · repaso de mis videos</p>
+  <h1>Aprende, no solo mires.</h1>
+  <p class="dek">Cada video deja una lección corta: el resumen, un auto-chequeo con respuestas, y los pasos para hacerlo tú. Elige una.</p>
+
+  <a class="lesson" href="./hyperframes/">
+    <h2>HyperFrames</h2>
+    <p>Editar video escribiendo HTML — y que tu agente lo haga por ti.</p>
+    <span class="go">Abrir lección →</span>
+  </a>
+  <a class="lesson" href="./wispr-flow/">
+    <h2>Wispr Flow</h2>
+    <p>Dictado con IA que edita, aprende de ti y transforma tu texto en cualquier app.</p>
+    <span class="go">Abrir lección →</span>
+  </a>
+  <a class="lesson" href="./teach-skill/">
+    <h2>La skill /teach</h2>
+    <p>Enseñar como enseña la ciencia del aprendizaje, no como adivina un chatbot.</p>
+    <span class="go">Abrir lección →</span>
+  </a>
+  <a class="lesson" href="./claude-watch/">
+    <h2>claude-watch</h2>
+    <p>Darle ojos a Claude para que analice cualquier video.</p>
+    <span class="go">Abrir lección →</span>
+  </a>
+
+  <div class="foot">Hecho por Jose Bossa</div>
+</div>
+</body>
+</html>
