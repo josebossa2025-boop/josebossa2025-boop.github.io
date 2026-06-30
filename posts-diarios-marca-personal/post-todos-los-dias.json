@@ -1,0 +1,196 @@
+{
+  "name": "Post todos los días",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        -32
+      ],
+      "id": "af746cca-2fe2-4164-8a24-9a50c8bf4d0c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Sigue el system prompt. Las ideas de los posts, las puedes generar tú, ideas principales de los posts son pensamientos sobre lo que viene en lso próximos años para las personas o la humanidad con la inteligencia Artifiales.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Rol\nEres un experto que ha trabajado como copywriter con Jose AI, durante 10 años en conjunto con el. Y eres quien lo ha llevado a generar más de 1 billon de vistas en redes sociales. Principalmente, LinkedIn y Threads. \n\n# Objetivo tanto en LinkedIn como en Threads\n\n1. Generar posts en LinkedIn de 200 a 400 caracteres, con saltos de linea.\n\n2. Generar posts en Threads de 100 a 120 caracteres, con saltos de linea.\n\n# Ejemplos de posts : \n\nLinkedIn : \n\nUso 3 inteligencias artificiales al mismo tiempo para programar, y acabo de cambiar una pieza clave del setup.\n\nMi arquitectura se llama Three Brains:\n\n→ Claude Code como orquestador principal\n→ Codex como reviewer del código\n→ Antigravity CLI reemplazando a Gemini como procesador de grandes cantidades de datos.\n\nTodo el proceso paso a paso lo grabé en video.\n\n\nThreads : \n\nUso 3 inteligencias artificiales al mismo tiempo para programar, y acabo de cambiar una pieza clave del setup.\n\n\nMi arquitectura se llama Three Brains : \n\nClaude\nCodex\nAntigravity\n\n\n# Salidas \n\n{\n\"LinkedIn\": \"Contenido de LinkedIn\",\n\"Threads\" : \"Contenido de Threads\"\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "282398bd-f30c-4efb-b240-9b205abb5013",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"LinkedIn\": \"Contenido de LinkedIn\",\n\"Threads\" : \"Contenido de Threads\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        176
+      ],
+      "id": "951b48a0-6e5f-4546-aaf0-979fa563fa64",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4.6",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        176
+      ],
+      "id": "65e2f220-cfe9-4923-9240-ec0fc590d9e7",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "PH6ysL4ubsbvE7ln",
+          "name": "Prueba"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "uploadText",
+        "user": "JoseAI",
+        "platform": [
+          "linkedin",
+          "threads"
+        ],
+        "title": "Mi pensamiento del día de hoy",
+        "linkedinTitle": "={{ $json.output.LinkedIn }}",
+        "threadsTitle": "={{ $json.output.Threads }}",
+        "targetLinkedinPageId": "me"
+      },
+      "type": "n8n-nodes-upload-post.uploadPost",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -32
+      ],
+      "id": "1377896d-2eb1-4832-a02f-6f6e17d1efd3",
+      "name": "Upload a text post",
+      "credentials": {
+        "uploadPostApi": {
+          "id": "HaskfO99TlJLKdcD",
+          "name": "Upload Post account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4.6",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        112,
+        352
+      ],
+      "id": "6b18684d-660c-4e97-a16a-7bd72221bac3",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "PH6ysL4ubsbvE7ln",
+          "name": "Prueba"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Upload a text post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3e9a6e26-61ee-42af-b329-eba7e2bf3e5e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92e380b32c0e72bb0481414da610e3e58ad91b414064c4a2109193c2ef9382bd"
+  },
+  "nodeGroups": [],
+  "id": "0Hl1661t47yrqH6Y",
+  "tags": []
+}
