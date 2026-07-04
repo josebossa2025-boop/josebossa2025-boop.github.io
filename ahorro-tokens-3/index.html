@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahorro de tokens en Claude Code 3/3 — hábitos que pagan solos — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #e8622c;
+  --cool: #22d3ee;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-dlrow { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-dl {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 12px;
+  background: var(--accent); color: #fff; text-decoration: none;
+  font-weight: 700; font-size: .98rem;
+  transition: transform .2s, box-shadow .2s;
+}
+.ls-dl::before { content: '⬇'; }
+.ls-dl:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -8px var(--accent); }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>Ahorro de tokens en Claude Code 3/3 — hábitos que pagan solos</h1>
+  <p class="ls-intro">Repaso del video 3 de la serie de ahorro de tokens en Claude Code: promptear en inglés, auditar /context y capar el thinking — cero instalación, ahorro permanente.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Configurar tres hábitos de sesión que bajan tu consumo de tokens sin instalar nada: idioma, auditoría de contexto y effort.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>Los tokenizadores favorecen al inglés: el mismo texto tokeniza hasta 15x más largo en otros idiomas (Petrov et al., NeurIPS 2023). Regla práctica: instrucciones en inglés, producto en español.</li><li>Cada MCP conectado registra sus definiciones de tools en CADA request, aunque no lo uses en toda la sesión. /context te muestra quién come tu ventana; /mcp te deja desconectar a los ociosos.</li><li>El thinking es tokens: con effort alto el modelo casi siempre piensa, y tiende a pensar de más (~1.3-1.5x por el mismo resultado). Default bajo; sube solo cuando la tarea lo exija de verdad.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿Por qué un MCP que no usaste en toda la sesión te costó tokens igual?</summary><div class="ls-a">Porque sus definiciones de tools se registran en cada request, usado o no. Por eso el hábito es /context para detectarlo y /mcp para desconectar los que no necesitas en esa sesión.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Qué mostró la demo de effort low vs xhigh sobre el mismo bug?</summary><div class="ls-a">Mismo bug encontrado en ambos: low usó 7 turnos y 1,028 tokens de output; xhigh usó 9 turnos y 1,363 tokens (~1.3x, y en pruebas repetidas ~1.5x). El thinking extra fue gasto sin retorno.</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>Siendo creador de contenido en español, ¿dónde aplicas el inglés?</summary><div class="ls-a">En la entrada: prompts, CLAUDE.md e instrucciones internas van en inglés (tokenizan más corto). La salida — tus videos, tus lecciones, tu producto — queda en español, el idioma de tu audiencia.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Traduce al inglés tus instrucciones permanentes: CLAUDE.md, system prompts y reglas de proyecto (el contenido para tu audiencia sigue en español).</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Abre tu próxima sesión importante con /context y mira el desglose: system prompt, tools, MCPs, memoria, skills, mensajes.</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Corre /mcp y desconecta los servidores que no vas a usar en esa sesión.</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Baja tu effort por defecto a low (en VS Code: /effort) y trabaja así una semana.</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Sube el effort solo por excepción: arquitectura compleja o debugging duro — y bájalo al terminar.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Opcional (nivel pro): monta un watcher con /loop que compare tu contexto contra el snapshot de ayer y te avise si algo creció.</span></label></li></ol></section>
+  
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://www.youtube.com/watch?v=aif87UYCxOo" target="_blank" rel="noopener">Video original de la serie (las 8 tácticas)</a><a class="ls-res" href="https://code.claude.com/docs/en/context-window" target="_blank" rel="noopener">Doc oficial de /context (Claude Code)</a><a class="ls-res" href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener">Doc de effort (Claude Platform)</a><a class="ls-res" href="https://arxiv.org/abs/2305.15425" target="_blank" rel="noopener">Petrov et al. — Tokenizers Introduce Unfairness Between Languages</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>
