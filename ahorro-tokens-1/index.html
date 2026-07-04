@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahorro de tokens en Claude Code 1/3 — RTK y compresión semántica — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #e8622c;
+  --cool: #22d3ee;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-dlrow { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-dl {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 12px;
+  background: var(--accent); color: #fff; text-decoration: none;
+  font-weight: 700; font-size: .98rem;
+  transition: transform .2s, box-shadow .2s;
+}
+.ls-dl::before { content: '⬇'; }
+.ls-dl:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -8px var(--accent); }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>Ahorro de tokens en Claude Code 1/3 — RTK y compresión semántica</h1>
+  <p class="ls-intro">Repaso del video 1 de la serie de ahorro de tokens en Claude Code: RTK y compresión semántica — recorta hasta la mitad de tus tokens sin perder calidad.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Instalar RTK y poner tu CLAUDE.md a dieta para que cada sesión de Claude Code gaste menos desde hoy.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>Gestión de tokens = gestión de contexto: cada token basura cuesta doble — dinero y atención del modelo.</li><li>RTK es un proxy que se engancha con un hook PreToolUse: reescribe cada comando Bash (git status → rtk git status) y comprime el output antes de que entre al contexto. Solo aplica al tool Bash; espera 30-50% real por sesión.</li><li>Comprimir no es resumir: la compresión semántica conserva TODO el significado en menos palabras. Si Claude obedece igual, comprimiste; si perdió algo, resumiste.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿Por qué un token basura cuesta doble?</summary><div class="ls-a">Porque lo pagas en la factura Y diluye la atención del modelo: el contexto es un recurso finito, y el ruido compite con la señal de lo que sí importa.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Qué hace el hook PreToolUse de RTK y dónde NO aplica?</summary><div class="ls-a">Reescribe cada llamada Bash automáticamente (git status → rtk git status) para que el proxy filtre, agrupe y deduplique el output. No aplica a los tools nativos Read, Grep y Glob — solo a Bash.</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>¿Cuál es la prueba de fuego de la compresión semántica?</summary><div class="ls-a">Reescribir con el mismo significado en mínimas palabras y verificar: si Claude sigue todas las instrucciones igual que antes, comprimiste; si algo se perdió, resumiste. En la demo: 865 → 211 palabras sin perder una instrucción.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Instala RTK: en macOS/Linux &#x27;brew install rtk&#x27;; en Windows, binario de releases o &#x27;cargo install --git https://github.com/rtk-ai/rtk&#x27;.</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Corre &#x27;rtk init -g&#x27; para instalar el hook PreToolUse en tu settings.json de Claude Code.</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Verifica: pide a Claude un &#x27;git status&#x27; y mira cómo el comando se reescribe a &#x27;rtk git status&#x27;.</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Comprime tu CLAUDE.md con este prompt: &#x27;Rewrite this CLAUDE.md with maximum information density: same meaning, minimum words. Show word count before/after.&#x27;</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Revisa el resultado línea por línea: si alguna instrucción desapareció, restáurala — comprimir nunca debe perder significado.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Repite la compresión en tus system prompts y archivos de memoria más cargados.</span></label></li></ol></section>
+  
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://www.youtube.com/watch?v=aif87UYCxOo" target="_blank" rel="noopener">Video original de la serie (las 8 tácticas)</a><a class="ls-res" href="https://github.com/rtk-ai/rtk" target="_blank" rel="noopener">RTK — Rust Token Killer (repo)</a><a class="ls-res" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener">Effective context engineering (Anthropic)</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>
