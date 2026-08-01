@@ -302,17 +302,26 @@ Es la que genera el título, el resumen y los capítulos con Claude.
 ### 2.2 Dónde guardar el video final
 
 El servicio tiene que devolverle a n8n una **URL descargable** del video editado.
-Dos opciones:
+El video terminado **no se queda en el VPS**: se sube a un almacenamiento externo y
+el disco del servidor queda libre. Dos opciones:
 
-> ¿Dónde quieres guardar los videos terminados?
-> **(A) En el propio VPS** — cero configuración, el servicio los sirve por HTTP.
-> Ideal para empezar. Ocupa disco del VPS.
-> **(B) Cloudflare R2** — almacenamiento de objetos, 10 GB gratis, no consume
-> disco del VPS y las URLs son más rápidas. Requiere cuenta de Cloudflare.
+**Pregunta al usuario:**
 
-Si elige **A**: solo hace falta la IP (ya la tienes).
-Si elige **B**: pídele estos 5 valores de Cloudflare → R2 → *Manage API tokens* y
-la configuración del bucket:
+> ¿Dónde quieres que queden guardados los videos terminados?
+> **(A) Cloudflare R2** — almacenamiento de objetos, 10 GB gratis, URL pública
+> directa y rápida. Es lo más simple de configurar y es lo que corre en producción.
+> **(B) Google Drive** — si ya trabajas en Drive y prefieres tenerlo todo ahí, en
+> una carpeta que puedes abrir y revisar a mano. Requiere pasar una vez por Google
+> Cloud Console (unos 10 minutos).
+
+Abre **solo** la sección de la opción que eligió.
+
+---
+
+#### 🟠 Opción A — Cloudflare R2
+
+Pídele estos 5 valores, de Cloudflare → **R2** → *Manage API tokens* y de la
+configuración del bucket:
 
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
@@ -320,6 +329,188 @@ la configuración del bucket:
 - `R2_ENDPOINT` → `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
 - `R2_PUBLIC_URL` → el dominio público del bucket (`https://pub-xxxx.r2.dev`),
   que se habilita en el bucket → **Settings** → **Public Development URL**
+
+Con eso terminas el Paso 2.2. Sigue al **Paso 2.3**.
+
+---
+
+#### 🔵 Opción B — Google Drive
+
+> ### ⚠️ La regla que no se puede saltar: carpeta de SALIDA ≠ carpeta de ENTRADA
+>
+> n8n vigila una carpeta de Drive para disparar el proceso: subes el video crudo
+> ahí y arranca todo. Si el video **editado** se guarda en **esa misma carpeta**,
+> el trigger lo detecta como archivo nuevo, lo manda a editar otra vez, y el flujo
+> **se muerde la cola para siempre** — reprocesando su propia salida, quemando CPU
+> y creando copias sin fin.
+>
+> Crea **dos carpetas distintas** en tu Drive antes de seguir:
+>
+> | Carpeta | Para qué | Quién la usa |
+> |---|---|---|
+> | `YouTube Videos` (entrada) | Donde sueltas el video crudo | El **trigger de n8n** la vigila |
+> | `YouTube Editados` (salida) | Donde cae el video ya editado | El **VPS** sube aquí (`GDRIVE_FOLDER_ID`) |
+>
+> El `GDRIVE_FOLDER_ID` del `.env` es **siempre el de la carpeta de salida**.
+> Antes de escribirlo en el `.env`, confírmale al usuario que ese ID no es el mismo
+> que va a poner en el trigger de n8n.
+
+**B.1 — Crear el proyecto y activar la Drive API**
+
+1. Entra a [console.cloud.google.com](https://console.cloud.google.com) con la
+   **misma cuenta dueña del Drive** donde van a quedar los videos.
+2. Arriba a la izquierda, el selector de proyecto → **Proyecto nuevo** → nombre
+   (`video-editor`) → **Crear**. Espera y **asegúrate de quedar dentro de ese
+   proyecto** (se ve en el selector): todo lo que sigue se hace ahí adentro.
+3. Menú ☰ → **APIs y servicios** → **Biblioteca** → busca **Google Drive API** →
+   **Habilitar**.
+
+**B.2 — Pantalla de consentimiento (el paso donde todos se equivocan)**
+
+1. **APIs y servicios** → **Pantalla de consentimiento de OAuth**.
+2. Tipo de usuario: **Externo** → **Crear**.
+3. Rellena lo mínimo: nombre de la app (`video-editor`), correo de asistencia y
+   correo del desarrollador → **Guardar y continuar**.
+4. Permisos: puedes seguir sin agregar ninguno desde aquí → **Guardar y continuar**.
+5. Usuarios de prueba: agrega tu propio correo → **Guardar y continuar**.
+6. **Vuelve al resumen de la pantalla de consentimiento y pulsa
+   «PUBLICAR APLICACIÓN»** (te pide confirmar el paso a producción). Acepta.
+
+> ### ⚠️ Por qué el paso 6 es obligatorio
+>
+> Mientras la app siga en estado **«Prueba» / «Testing»**, Google **caduca el
+> refresh token a los 7 días**. El servicio funciona perfecto una semana y después
+> empieza a fallar cada subida con `invalid_grant`, sin que haya cambiado nada.
+> Es el error más difícil de diagnosticar de toda esta instalación, porque no
+> ocurre el día que instalas.
+>
+> Con la app **publicada / en producción** desaparece esa caducidad de 7 días. El
+> token sigue pudiendo morir por otras causas —si revocas el acceso a mano, si
+> pasan 6 meses sin usarse, si cambias la contraseña de Google o si superas el
+> límite de tokens vivos por cliente— pero ninguna de esas pasa sola en un
+> servicio que sube videos cada semana. Cuando pase, se vuelve a correr
+> `get_refresh_token.py` y listo.
+>
+> A cambio, al autorizar vas a ver una pantalla de **«Google no ha verificado esta
+> aplicación»**. Es lo esperado para una app personal: entra por
+> **Configuración avanzada → Ir a video-editor (no seguro)**. Es tu propia app
+> pidiendo permiso sobre tu propio Drive.
+
+**B.3 — Crear las credenciales OAuth**
+
+1. **APIs y servicios** → **Credenciales** → **+ Crear credenciales** →
+   **ID de cliente de OAuth**.
+2. Tipo de aplicación: **Aplicación de escritorio** (no "Aplicación web": el flujo
+   de abajo abre un servidor local para capturar el código).
+3. Nombre: `video-editor-cli` → **Crear**.
+4. Copia los dos valores que muestra:
+   - **ID de cliente** → `GDRIVE_CLIENT_ID` (termina en `.apps.googleusercontent.com`)
+   - **Secreto de cliente** → `GDRIVE_CLIENT_SECRET`
+
+**B.4 — Conseguir el refresh token (una sola vez, en la computadora del usuario)**
+
+Esto **no se puede hacer en el VPS**: hay que abrir un navegador para autorizar, y
+el servidor no tiene. Se corre local una vez, y el token resultante se copia al
+`.env` del servidor.
+
+En la carpeta local del proyecto:
+
+```powershell
+pip install google-auth-oauthlib
+```
+
+Crea `get_refresh_token.py` en la carpeta local (es una herramienta de un solo uso,
+**no se sube al VPS**) y reemplaza los dos valores del Paso B.3:
+
+```python
+#!/usr/bin/env python3
+"""Consigue el GDRIVE_REFRESH_TOKEN. Se corre UNA vez, en tu computadora."""
+
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+CLIENT_ID = "<GDRIVE_CLIENT_ID>"
+CLIENT_SECRET = "<GDRIVE_CLIENT_SECRET>"
+
+# Scope completo de Drive. Es el que funciona sin sorpresas para subir a una
+# carpeta que creaste tú a mano y para marcar el archivo como accesible por
+# enlace. Lee el aviso de seguridad de abajo antes de seguir.
+SCOPES = ["https://www.googleapis.com/auth/drive"]
+
+flow = InstalledAppFlow.from_client_config(
+    {
+        "installed": {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    },
+    SCOPES,
+)
+
+# access_type=offline + prompt=consent son los que hacen que Google devuelva un
+# refresh token. Sin ellos solo llega un access token que dura una hora.
+creds = flow.run_local_server(port=0, access_type="offline", prompt="consent")
+
+if not creds.refresh_token:
+    raise SystemExit(
+        "Google no devolvió refresh token.\n"
+        "Suele pasar cuando la cuenta ya tenía la app autorizada. Revoca el acceso "
+        "en https://myaccount.google.com/permissions y vuelve a correr este script."
+    )
+
+print("\n" + "=" * 60)
+print("GDRIVE_REFRESH_TOKEN=" + creds.refresh_token)
+print("=" * 60)
+print("\nCópialo al .env. No lo pegues en ningún chat ni lo subas a git.")
+```
+
+```powershell
+python get_refresh_token.py
+```
+
+Se abre el navegador → elige la cuenta → pasa la advertencia de app no verificada
+(**Configuración avanzada → Ir a video-editor**) → **Permitir**. La terminal
+imprime el `GDRIVE_REFRESH_TOKEN`.
+
+> ### 🔐 Qué estás entregando con este token (léelo, no lo saltes)
+>
+> El scope `drive` es **acceso completo**: quien tenga ese refresh token junto con
+> el client id y el secret puede **ver, modificar y borrar todo tu Google Drive**,
+> no solo la carpeta de salida. No es exclusivo de este playbook — es cómo funciona
+> subir a Drive desde un servidor — pero conviene saberlo:
+>
+> - El `.env` del VPS queda en `chmod 600` y **nunca** va a git (ya está en el
+>   `.gitignore`).
+> - `get_refresh_token.py` lleva el client secret adentro: tampoco va a git.
+> - Si alguna vez sospechas del servidor, revoca el acceso en
+>   [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+>   El token muere al instante y el servicio deja de subir hasta que generes otro.
+> - ¿Quieres apretar más? Prueba con
+>   `https://www.googleapis.com/auth/drive.file`, que limita la app a los archivos
+>   que ella misma crea. Es más seguro, pero según la cuenta puede fallar con
+>   `404 File not found` al subir a una carpeta que creaste tú a mano. Si te pasa,
+>   vuelve a `drive`.
+
+**B.5 — El ID de la carpeta de salida**
+
+Abre en el navegador la carpeta **de salida** (`YouTube Editados`). La URL se ve así:
+
+```
+https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz123456
+                                        └──────────── GDRIVE_FOLDER_ID ────────────┘
+```
+
+**Verifica con el usuario que ese ID NO es el de la carpeta que va a vigilar n8n.**
+
+**Resumen — los 4 valores de la Opción B:**
+
+| Variable | De dónde sale |
+|---|---|
+| `GDRIVE_CLIENT_ID` | Paso B.3 |
+| `GDRIVE_CLIENT_SECRET` | Paso B.3 |
+| `GDRIVE_REFRESH_TOKEN` | Paso B.4 |
+| `GDRIVE_FOLDER_ID` | Paso B.5 (carpeta de **salida**) |
 
 ### 2.3 Modelo de Whisper
 
@@ -370,6 +561,7 @@ video-editor/
 ├── ideas.md                ← ideas que surgen al margen, para revisar al cerrar objetivos
 ├── .env                    ← claves reales. NUNCA a git.
 ├── .gitignore
+├── get_refresh_token.py    ← solo si elegiste Google Drive. De un solo uso, NO se deploya.
 ├── api.py                  ← Flask API: endpoints + orquestación del pipeline
 ├── execution/              ← módulos del pipeline
 │   ├── CLAUDE.md           ← sub-CLAUDE.md: qué hace cada módulo y sus trampas
@@ -388,8 +580,6 @@ video-editor/
 ├── .env                    ← variables de entorno del servidor (chmod 600)
 ├── venv/                   ← entorno virtual de Python (~2.5 GB con torch CPU)
 ├── logs/api.log            ← log persistente del servicio
-├── output/                 ← videos terminados, solo si STORAGE=local
-│   └── YYYY-MM-DD/*.mp4
 └── execution/              ← coincide EXACTAMENTE con el local
     ├── jump_cut_vad.py
     └── simple_video_edit.py
@@ -524,7 +714,7 @@ Responde 202 inmediato. El resultado llega al webhook al terminar.
 2. Whisper       → transcribe el video ORIGINAL (word-level)
 3. FFmpeg        → corta silencios + audio (highpass 80Hz + loudnorm -16 LUFS)
 4. Claude        → título, resumen, capítulos y recursos (OpenRouter)
-5. Almacenamiento→ <VPS local / Cloudflare R2>
+5. Almacenamiento→ <Cloudflare R2 / Google Drive>
 6. Webhook n8n   → envía el resultado completo
 ```
 
@@ -538,9 +728,9 @@ Responde 202 inmediato. El resultado llega al webhook al terminar.
 | `VIDEO_PORT` | 5051 |
 | `API_SECRET` | Protege el endpoint |
 | `WHISPER_MODEL` / `WHISPER_LANGUAGE` | Transcripción |
-| `STORAGE` | `local` o `r2` |
-| `PUBLIC_BASE_URL` | URL pública si `STORAGE=local` |
+| `STORAGE` | `r2` o `drive` |
 | `R2_*` | Credenciales de Cloudflare R2 si `STORAGE=r2` |
+| `GDRIVE_*` | Credenciales OAuth + carpeta de salida si `STORAGE=drive` |
 
 ---
 
@@ -686,11 +876,14 @@ No se deploya. Es contexto para entender y extender el servicio.
 .ssh-access
 venv/
 logs/
-output/
 __pycache__/
 *.pyc
 *.mp4
+get_refresh_token.py
 ```
+
+> `get_refresh_token.py` lleva el client secret de Google escrito adentro. Si
+> elegiste Cloudflare R2 ese archivo ni existe y la línea sobra, pero no molesta.
 
 ### 2.5.4 Confirmación antes de seguir
 
@@ -733,7 +926,7 @@ free -h
 ### 3.3 Carpetas y entorno virtual
 
 ```bash
-mkdir -p /root/video-editor/execution /root/video-editor/logs /root/video-editor/output
+mkdir -p /root/video-editor/execution /root/video-editor/logs
 cd /root/video-editor
 python3 -m venv venv
 ./venv/bin/pip install --upgrade pip
@@ -745,7 +938,18 @@ python3 -m venv venv
 cd /root/video-editor
 # torch versión CPU: evita descargar ~2 GB de wheels con CUDA que el VPS no usa
 ./venv/bin/pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-./venv/bin/pip install flask faster-whisper silero-vad==6.2.1 boto3 requests python-dotenv
+./venv/bin/pip install flask faster-whisper silero-vad==6.2.1 requests python-dotenv
+```
+
+Y **solo la del almacenamiento que eligió el usuario en el Paso 2.2**:
+
+```bash
+cd /root/video-editor
+# Opción A — Cloudflare R2
+./venv/bin/pip install boto3
+
+# Opción B — Google Drive
+./venv/bin/pip install google-api-python-client google-auth
 ```
 
 ### 3.5 Archivo `.env`
@@ -767,18 +971,22 @@ API_SECRET=<cadena_aleatoria_larga>
 WHISPER_MODEL=large-v3-turbo
 WHISPER_LANGUAGE=es
 
-# --- Almacenamiento: "local" o "r2" ---
-STORAGE=local
+# --- Almacenamiento: "r2" o "drive" (lo que se eligió en el Paso 2.2) ---
+STORAGE=r2
 
-# Si STORAGE=local, la URL pública del propio VPS:
-PUBLIC_BASE_URL=http://<IP_DEL_VPS>:5051
-
-# Si STORAGE=r2, completa estos y deja PUBLIC_BASE_URL vacío:
+# Si STORAGE=r2, completa estos cinco y deja los GDRIVE_* vacíos:
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET=
 R2_ENDPOINT=
 R2_PUBLIC_URL=
+
+# Si STORAGE=drive, completa estos cuatro y deja los R2_* vacíos.
+# GDRIVE_FOLDER_ID es la carpeta de SALIDA: NUNCA la que vigila el trigger de n8n.
+GDRIVE_CLIENT_ID=
+GDRIVE_CLIENT_SECRET=
+GDRIVE_REFRESH_TOKEN=
+GDRIVE_FOLDER_ID=
 ```
 
 ```bash
@@ -1217,7 +1425,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 
 BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
@@ -1235,8 +1443,6 @@ from simple_video_edit import generate_metadata, transcribe_video
 
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR = BASE_DIR / "output"
-OUTPUT_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1256,14 +1462,18 @@ app = Flask(__name__)
 _processing_lock = threading.Semaphore(1)
 
 API_SECRET = os.getenv("API_SECRET")
-STORAGE = os.getenv("STORAGE", "local").strip().lower()
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+STORAGE = os.getenv("STORAGE", "r2").strip().lower()
 
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
 R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
 R2_BUCKET = os.getenv("R2_BUCKET")
 R2_ENDPOINT = os.getenv("R2_ENDPOINT")
 R2_PUBLIC_URL = (os.getenv("R2_PUBLIC_URL") or "").rstrip("/")
+
+GDRIVE_CLIENT_ID = os.getenv("GDRIVE_CLIENT_ID")
+GDRIVE_CLIENT_SECRET = os.getenv("GDRIVE_CLIENT_SECRET")
+GDRIVE_REFRESH_TOKEN = os.getenv("GDRIVE_REFRESH_TOKEN")
+GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 
 
 def _check_auth(data: dict) -> bool:
@@ -1273,33 +1483,90 @@ def _check_auth(data: dict) -> bool:
     return key == API_SECRET
 
 
-def _upload(file_path: str, filename: str) -> str:
-    """Guarda el video final y devuelve su URL pública."""
-    today = date.today().strftime("%Y-%m-%d")
-    key = f"{today}/{filename}"
+def _upload_r2(file_path: str, filename: str) -> dict:
+    import boto3
 
+    key = f"{date.today():%Y-%m-%d}/{filename}"
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=R2_ENDPOINT,
+        aws_access_key_id=R2_ACCESS_KEY_ID,
+        aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+        region_name="auto",
+    )
+    s3.upload_file(file_path, R2_BUCKET, key, ExtraArgs={"ContentType": "video/mp4"})
+    logger.info(f"[UPLOAD] R2: {key}")
+    return {"video_url": f"{R2_PUBLIC_URL}/{key}"}
+
+
+def _upload_drive(file_path: str, filename: str) -> dict:
+    """
+    Sube a la carpeta de SALIDA de Google Drive (GDRIVE_FOLDER_ID) y la deja
+    accesible por enlace.
+
+    OJO: GDRIVE_FOLDER_ID nunca puede ser la carpeta que vigila el trigger de n8n.
+    Si lo fuera, el video editado dispararía el flujo otra vez y se reprocesaría
+    a sí mismo en un bucle infinito.
+    """
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+
+    # Credentials sin access token: la librería lo pide sola con el refresh token.
+    creds = Credentials(
+        None,
+        refresh_token=GDRIVE_REFRESH_TOKEN,
+        client_id=GDRIVE_CLIENT_ID,
+        client_secret=GDRIVE_CLIENT_SECRET,
+        token_uri="https://oauth2.googleapis.com/token",
+    )
+    service = build("drive", "v3", credentials=creds, cache_discovery=False)
+
+    # resumable=True: un video de varios cientos de MB no se sube de una sola vez.
+    media = MediaFileUpload(
+        file_path, mimetype="video/mp4", resumable=True, chunksize=8 * 1024 * 1024
+    )
+    created = service.files().create(
+        body={"name": filename, "parents": [GDRIVE_FOLDER_ID]},
+        media_body=media,
+        fields="id,webViewLink",
+        supportsAllDrives=True,
+    ).execute()
+
+    file_id = created["id"]
+
+    # Accesible por enlace, igual que un bucket público de R2: cualquiera que
+    # tenga el ID puede ver el video, sin login. Es lo que hace que 'video_url'
+    # sirva desde fuera.
+    #
+    # Si NO quieres que sean públicos: borra este bloque. El video sigue subiendo
+    # y n8n lo baja igual con 'drive_file_id' + su propia credencial de Drive;
+    # lo único que deja de funcionar es abrir 'video_url' sin estar logueado.
+    service.permissions().create(
+        fileId=file_id,
+        body={"role": "reader", "type": "anyone"},
+        supportsAllDrives=True,
+    ).execute()
+
+    logger.info(f"[UPLOAD] Drive: {filename} ({file_id})")
+    return {
+        "video_url": f"https://drive.google.com/uc?export=download&id={file_id}",
+        "drive_file_id": file_id,
+        "drive_view_url": created.get("webViewLink", ""),
+    }
+
+
+def _upload(file_path: str, filename: str) -> dict:
+    """
+    Guarda el video final y devuelve un dict que se mezcla en el payload del
+    webhook. Siempre trae 'video_url'; con Drive trae además 'drive_file_id' y
+    'drive_view_url'.
+    """
+    if STORAGE == "drive":
+        return _upload_drive(file_path, filename)
     if STORAGE == "r2":
-        import boto3
-
-        s3 = boto3.client(
-            "s3",
-            endpoint_url=R2_ENDPOINT,
-            aws_access_key_id=R2_ACCESS_KEY_ID,
-            aws_secret_access_key=R2_SECRET_ACCESS_KEY,
-            region_name="auto",
-        )
-        s3.upload_file(file_path, R2_BUCKET, key, ExtraArgs={"ContentType": "video/mp4"})
-        logger.info(f"[UPLOAD] R2: {key}")
-        return f"{R2_PUBLIC_URL}/{key}"
-
-    if not PUBLIC_BASE_URL:
-        raise RuntimeError("STORAGE=local requiere PUBLIC_BASE_URL en el .env")
-
-    dest = OUTPUT_DIR / today
-    dest.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(file_path, dest / filename)
-    logger.info(f"[UPLOAD] local: {key}")
-    return f"{PUBLIC_BASE_URL}/files/{key}"
+        return _upload_r2(file_path, filename)
+    raise RuntimeError(f"STORAGE inválido: '{STORAGE}'. Usa 'r2' o 'drive'.")
 
 
 def _segments_to_cuts(speech_segments: list, duration: float) -> list:
@@ -1365,16 +1632,17 @@ def _process_video_task(video_path: str, title: str, webhook_url: str, tmp_dir: 
         safe_title = (
             "".join(c for c in title if c.isalnum() or c in " -_").strip().replace(" ", "_")[:60]
         )
-        video_url = _upload(output_path, f"{safe_title}.mp4")
+        upload = _upload(output_path, f"{safe_title}.mp4")
 
         payload = {
             "status": "ok",
             "title": metadata["title"],
-            "video_url": video_url,
             "summary": metadata["summary"],
             "chapters": metadata["chapters"],
             "resources": metadata.get("resources", ""),
             "transcript": transcript_text,
+            # 'video_url' y, si es Drive, 'drive_file_id' + 'drive_view_url'
+            **upload,
         }
         resp = requests.post(webhook_url, json=payload, timeout=30)
         logger.info(f"[WEBHOOK] -> {webhook_url} ({resp.status_code})")
@@ -1400,12 +1668,6 @@ def _process_video_task(video_path: str, title: str, webhook_url: str, tmp_dir: 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "service": "video-editor", "storage": STORAGE})
-
-
-@app.route("/files/<path:key>", methods=["GET"])
-def files(key):
-    """Sirve los videos terminados cuando STORAGE=local."""
-    return send_from_directory(OUTPUT_DIR, key)
 
 
 @app.route("/process", methods=["POST"])
@@ -1546,7 +1808,8 @@ curl -s http://localhost:5051/health
 curl -s http://<IP>:5051/health
 ```
 
-Debe devolver `{"status":"ok","service":"video-editor","storage":"local"}`.
+Debe devolver `{"status":"ok","service":"video-editor","storage":"r2"}` (o
+`"storage":"drive"`, según lo que se eligió en el Paso 2.2).
 
 ### 5.2 Prueba real con un video corto
 
@@ -1577,21 +1840,30 @@ Es el error más costoso de este pipeline: el video sale "bien" pero el audio va
 corrido. Compara la duración de los dos streams del archivo final:
 
 ```bash
-VIDEO=$(ls -t /root/video-editor/output/*/*.mp4 | head -1)
+VIDEO=/tmp/verificar.mp4
+# Descarga el video que llegó al webhook (la 'video_url' del payload)
+curl -sL "<VIDEO_URL_DEL_WEBHOOK>" -o "$VIDEO"
+
 ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$VIDEO"
 ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 "$VIDEO"
 ```
 
-Las dos duraciones deben diferir en **menos de 0.1s**. Además, descarga el video y
-escucha 10 segundos del final: si los labios y la voz no coinciden ahí, hay drift.
+Las dos duraciones deben diferir en **menos de 0.1s**. Además, escucha 10 segundos
+del final del archivo que descargaste: si los labios y la voz no coinciden ahí,
+hay drift.
 
-### 5.4 Limpieza del disco (solo si `STORAGE=local`)
+### 5.4 Los videos se acumulan (en R2 o en Drive, no en el VPS)
 
-Los videos terminados se acumulan. Opcional, borra los de más de 14 días:
+El disco del servidor no crece: los temporales se borran en el `finally` de cada
+request y el video final vive en el almacenamiento externo. Pero **ese
+almacenamiento sí se llena**, y ninguna de las dos opciones borra nada sola:
 
-```bash
-crontab -l 2>/dev/null | { cat; echo "0 4 * * * find /root/video-editor/output -type f -mtime +14 -delete"; } | crontab -
-```
+- **Cloudflare R2** → bucket → **Settings** → **Object lifecycle rules**: crea una
+  regla que elimine objetos con más de N días. Los 10 GB gratis son unos 20-30
+  videos largos.
+- **Google Drive** → no tiene reglas de expiración. Vacía la carpeta de salida a
+  mano cada tanto, y recuerda **vaciar también la papelera**: en Drive los archivos
+  borrados siguen ocupando cuota durante 30 días.
 
 ### 📝 Documenta ahora (Paso 5)
 
@@ -1681,13 +1953,38 @@ Del otro lado necesitas un nodo **Webhook** en n8n (método POST) cuya URL ponga
 {
   "status": "ok",
   "title": "Título optimizado para YouTube",
-  "video_url": "http://<IP>:5051/files/2026-08-01/Video_de_prueba.mp4",
+  "video_url": "https://pub-xxxx.r2.dev/2026-08-01/Video_de_prueba.mp4",
   "summary": "Resumen del video en 2-4 oraciones",
   "chapters": "00:00:00 Introducción\n00:02:30 Primer tema\n...",
   "resources": "Herramienta mencionada\nLink prometido",
   "transcript": "Transcripción completa del video"
 }
 ```
+
+Con `STORAGE=drive` llegan además dos campos:
+
+```json
+{
+  "video_url": "https://drive.google.com/uc?export=download&id=<FILE_ID>",
+  "drive_file_id": "<FILE_ID>",
+  "drive_view_url": "https://drive.google.com/file/d/<FILE_ID>/view?usp=drivesdk"
+}
+```
+
+> ### ⚠️ Con Drive, para videos grandes usa `drive_file_id`, no `video_url`
+>
+> El enlace `uc?export=download` funciona bien con archivos chicos, pero cuando el
+> video pasa de ~100 MB Google no devuelve el archivo: devuelve una **página HTML**
+> de aviso del antivirus. El nodo que intente descargarlo va a recibir HTML en vez
+> de un mp4, y el error se ve como un archivo corrupto.
+>
+> La forma confiable en n8n es no descargar la URL: usar un nodo **Google Drive →
+> Download file** con el `drive_file_id` del payload y tu propia credencial de
+> Drive. Baja el binario real, sin límite de tamaño ni interstitial.
+>
+> El `video_url` queda igual en el payload porque sirve para pegarlo en un mensaje,
+> abrirlo a mano o descargar videos cortos. `drive_view_url` es el enlace normal de
+> Drive para verlo en el navegador.
 
 Si algo falla, llega `{"status": "error", "error": "<detalle>"}` — conviene un nodo
 **IF** sobre `status` para separar los dos caminos.
@@ -1739,7 +2036,7 @@ Verifica una por una y reportá el estado:
 | `docs/CLAUDE.md` | Una línea por cada archivo que haya en `docs/` |
 | `troubleshooting.md` | Una entrada por cada error que apareció durante la instalación |
 | `ideas.md` | Las ideas del proceso, cada una con el contexto de dónde salió |
-| `.gitignore` | `.env`, `venv/`, `logs/`, `output/`, `*.mp4` |
+| `.gitignore` | `.env`, `venv/`, `logs/`, `*.mp4` (y `get_refresh_token.py` si usaste Drive: tiene el client secret dentro) |
 
 Si algún archivo quedó con los placeholders `<...>` del template, complétalo ahora.
 Un `CLAUDE.md` con placeholders es peor que no tenerlo: se lee como si fuera real.
@@ -1797,7 +2094,7 @@ POST /process
       8. generate_metadata(words, cuts, ...)     Claude vía OpenRouter
          y ajusta los timestamps de capítulos restando los silencios eliminados
 
-      9. _upload(output.mp4)                     local o R2
+      9. _upload(output.mp4)                     Cloudflare R2 o Google Drive
      10. POST al webhook_url con el JSON completo
 ```
 
@@ -1830,6 +2127,11 @@ Decisiones que parecen raras y no lo son:
 | Audio desincronizado del video | Drift en la concatenación | Revisar 5.3. No cambiar `-c:v copy` en el concat final |
 | `401 Unauthorized` desde n8n | `api_secret` no coincide | Comparar el valor del nodo con el `.env` del servidor |
 | Nombres técnicos mal transcritos | Falta vocabulario | Agregar los términos a `vocab_prompt` en `simple_video_edit.py` |
+| **Drive:** funcionó una semana y ahora toda subida falla con `invalid_grant` | Casi siempre: la app de OAuth quedó en estado **Prueba/Testing** y Google caduca el refresh token a los 7 días. Si ya estaba publicada, la otra causa es que el acceso se revocó, cambió la contraseña de Google, o pasaron 6 meses sin usarse | Verificar que la app esté **publicada** (Paso B.2.6) y **volver a generar el refresh token** con `get_refresh_token.py`. El token viejo ya está muerto en cualquiera de los casos |
+| **Drive:** `403 insufficientFilePermissions` o `404` al subir | `GDRIVE_FOLDER_ID` mal copiado, o la carpeta es de otra cuenta | El ID es lo que va después de `/folders/` en la URL. Debe ser una carpeta de la **misma cuenta** que autorizó el OAuth |
+| **Drive:** el flujo se reprocesa a sí mismo sin parar | `GDRIVE_FOLDER_ID` es la **misma** carpeta que vigila el trigger de n8n | Apagar el workflow ya, crear una carpeta de salida separada y cambiar `GDRIVE_FOLDER_ID`. Ver el aviso del Paso 2.2 |
+| **Drive:** n8n baja el video y sale corrupto / es un HTML | El video pasa de 100 MB y `uc?export=download` devolvió la página del antivirus | Usar el nodo **Google Drive → Download file** con `drive_file_id`, no descargar `video_url` |
+| **Drive:** `ModuleNotFoundError: googleapiclient` | Se instalaron las dependencias de R2 en vez de las de Drive | `./venv/bin/pip install google-api-python-client google-auth` y reiniciar el servicio |
 
 Después de cualquier cambio en el código:
 
