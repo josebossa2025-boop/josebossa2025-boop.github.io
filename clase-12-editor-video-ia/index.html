@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 12 — Un agente de código te monta el editor de video en tu VPS (y n8n le manda el trabajo) — Lección</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --fg: #f0ece4;
+  --muted: #7a7a8a;
+  --line: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.025);
+  --warm: #e8622c;
+  --cool: #22d3ee;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 120px; }
+
+.ls-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px;
+}
+.ls-intro { color: var(--muted); font-size: 1.05rem; max-width: 600px; }
+
+.ls-win {
+  margin: 30px 0 40px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cool);
+  font-size: 1.08rem;
+}
+.ls-win span {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cool); margin-bottom: 8px;
+}
+
+.ls-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 32px 30px;
+  margin-bottom: 22px;
+}
+.ls-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 1.5rem; margin-bottom: 18px;
+}
+.ls-hint { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+
+.ls-recap { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ls-recap li {
+  padding-left: 26px; position: relative; font-size: 1.02rem;
+}
+.ls-recap li::before {
+  content: '✦'; position: absolute; left: 0; color: var(--cool);
+}
+
+.ls-q {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.ls-q:last-child { border-bottom: none; }
+.ls-q summary {
+  cursor: pointer; list-style: none;
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 14px 0; font-size: 1.05rem; font-weight: 500;
+}
+.ls-q summary::-webkit-details-marker { display: none; }
+.ls-q summary::after {
+  content: 'ver respuesta'; margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; align-self: center;
+}
+.ls-q[open] summary::after { content: 'ocultar'; color: var(--cool); }
+.ls-qn { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cool); }
+.ls-a {
+  padding: 0 0 18px 30px; color: var(--muted); font-size: 0.98rem; line-height: 1.6;
+}
+
+.ls-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 4px; }
+.ls-steps li { padding: 6px 0; }
+.ls-steps label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 1.02rem;
+}
+.ls-steps input { margin-top: 6px; accent-color: var(--cool); flex-shrink: 0; cursor: pointer; }
+.ls-steps input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.ls-dlrow { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-dl {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 12px;
+  background: var(--accent); color: #fff; text-decoration: none;
+  font-weight: 700; font-size: .98rem;
+  transition: transform .2s, box-shadow .2s;
+}
+.ls-dl::before { content: '⬇'; }
+.ls-dl:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -8px var(--accent); }
+
+.ls-reslist { display: flex; flex-wrap: wrap; gap: 12px; }
+.ls-res {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  transition: border-color .2s, transform .2s;
+}
+.ls-res::after { content: '↗'; color: var(--cool); }
+.ls-res:hover { border-color: var(--cool); transform: translateY(-1px); }
+
+.ls-foot {
+  margin-top: 40px; text-align: center; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ls-eyebrow">Lección · repaso del video</div>
+  <h1>Clase 12 — Un agente de código te monta el editor de video en tu VPS (y n8n le manda el trabajo)</h1>
+  <p class="ls-intro">Repaso de la clase 12: cómo un agente de código te monta en tu propio VPS el servicio que corta los silencios, limpia el audio y transcribe tus videos — y cómo n8n le manda el video desde una carpeta de Google Drive.</p>
+  <p class="ls-win"><span>Al terminar vas a poder:</span> Dejar corriendo tu propio editor automático en un VPS, disparado al subir el video a Google Drive, sin escribir una línea de código.</p>
+  <section class="ls-card"><h2>Lo clave en 3 ideas</h2><ul class="ls-recap"><li>Un agente de código no te devuelve texto para copiar: lee y escribe archivos, corre comandos en tu servidor y corrige sus propios errores. Por eso le entregas un playbook en .md y él ejecuta la instalación completa contigo respondiendo preguntas.</li><li>El pipeline son cuatro piezas en orden: Silero VAD marca dónde hay voz, Whisper large-v3-turbo transcribe el video ORIGINAL (con silencios), FFmpeg corta y normaliza el audio a -16 LUFS, y Cloudflare R2 guarda el resultado y devuelve la URL pública. Al final, un webhook le avisa a n8n con la URL y la transcripción.</li><li>La estructura de documentación —CLAUDE.md maestro, sub-CLAUDE.md por carpeta, troubleshooting.md e ideas.md— es lo que evita que el agente se pierda en proyectos grandes: le da el mapa, el historial de errores ya resueltos y un lugar donde dejar las ideas sin descarrilar la tarea en curso.</li></ul></section>
+  <section class="ls-card"><h2>Pon a prueba lo que entendiste</h2><p class="ls-hint">Responde mentalmente antes de abrir la respuesta.</p><details class="ls-q"><summary><span class="ls-qn">01</span>¿Por qué Whisper transcribe el video original y no el que ya quedó cortado?</summary><div class="ls-a">Porque los capítulos se generan con los tiempos del original. Si transcribieras el editado, no habría forma de reubicarlos; transcribiendo el original se le resta a cada marca el silencio eliminado antes de ella y los capítulos caen en su lugar.</div></details><details class="ls-q"><summary><span class="ls-qn">02</span>¿Qué pasa si le mandas dos videos al VPS al mismo tiempo?</summary><div class="ls-a">Se ponen en cola. Hay un Semaphore(1) en api.py que deja pasar un video pesado a la vez. Sin eso, dos Whisper y dos PyTorch en RAM simultáneos agotan la memoria y el sistema mata el proceso.</div></details><details class="ls-q"><summary><span class="ls-qn">03</span>Hoy el editor corta silencios. ¿Qué más se le puede pedir?</summary><div class="ls-a">Que corte las repeticiones: si te equivocas y repites la frase, que borre la toma anterior y deje solo la buena. No está implementado —Jose se queda callado para no equivocarse, y eso el VAD ya lo resuelve— pero es exactamente el tipo de cosa que le pides al agente de código y la agrega al pipeline.</div></details></section>
+  <section class="ls-card"><h2>Hazlo tú — paso a paso</h2><ol class="ls-steps"><li><label><input type="checkbox" data-ls="0"><span>Descarga los dos archivos de abajo y ponlos juntos en una carpeta nueva de tu computadora (por ejemplo, `video-editor/`).</span></label></li><li><label><input type="checkbox" data-ls="1"><span>Ten a mano tres cosas antes de empezar: los accesos SSH de tu VPS (IP, usuario y contraseña), tu API key de OpenRouter con saldo, y las credenciales de Cloudflare R2 del bucket donde van a quedar los videos.</span></label></li><li><label><input type="checkbox" data-ls="2"><span>Abre Claude Code dentro de esa carpeta y dile: «Lee INSTALAR-VIDEO-EDITOR-VPS.md y ejecútalo paso a paso conmigo». A partir de ahí tu trabajo es responder preguntas, una a la vez.</span></label></li><li><label><input type="checkbox" data-ls="3"><span>Cuando te pregunte dónde guardar el video terminado, elige Cloudflare R2 y pégale los cinco valores que te pide. El resto lo configura él.</span></label></li><li><label><input type="checkbox" data-ls="4"><span>Al terminar, pídele que corra la verificación de sincronía audio/video del Paso 5.3. Las dos duraciones deben diferir en menos de 0.1 segundos: si no, el video sale con el audio corrido.</span></label></li><li><label><input type="checkbox" data-ls="5"><span>Importa `Video-Editor-Enviar-a-VPS.json` en n8n y cambia solo cuatro cosas: la carpeta de Drive que vigila, la URL de tu VPS en el nodo HTTP Request, la URL de tu webhook y el api_secret.</span></label></li><li><label><input type="checkbox" data-ls="6"><span>Activa el workflow y sube un video corto a esa carpeta de Drive. El resultado llega al webhook con la URL del video editado, el título, el resumen, los capítulos y la transcripción.</span></label></li><li><label><input type="checkbox" data-ls="7"><span>La primera vez que algo falle, pídele a Claude Code que lo registre en `troubleshooting.md` antes de seguir. Ese archivo es el que te ahorra el segundo susto.</span></label></li></ol></section>
+  <section class="ls-card"><h2>Llévate los dos archivos de la clase</h2><div class="ls-dlrow"><a class="ls-dl" href="INSTALAR-VIDEO-EDITOR-VPS.md" download>Playbook de instalación (.md para Claude Code)</a><a class="ls-dl" href="Video-Editor-Enviar-a-VPS.json" download>Workflow de n8n (.json para importar)</a></div></section>
+  <section class="ls-card"><h2>Para ir más lejos</h2><div class="ls-reslist"><a class="ls-res" href="https://code.claude.com/docs" target="_blank" rel="noopener">Claude Code — documentación oficial</a><a class="ls-res" href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter — crear tu API key</a><a class="ls-res" href="https://developers.cloudflare.com/r2/" target="_blank" rel="noopener">Cloudflare R2 — documentación</a><a class="ls-res" href="https://webhook.site" target="_blank" rel="noopener">webhook.site — webhook de prueba gratis</a><a class="ls-res" href="https://github.com/snakers4/silero-vad" target="_blank" rel="noopener">Silero VAD — el detector de voz</a><a class="ls-res" href="https://github.com/SYSTRAN/faster-whisper" target="_blank" rel="noopener">faster-whisper — la transcripción</a><a class="ls-res" href="https://n8n.io" target="_blank" rel="noopener">n8n</a></div></section>
+  <div class="ls-foot">Hecho por Jose Bossa</div>
+</div>
+<script>
+// Persist step checkboxes so progress survives refresh
+(function () {
+  const STORE = 'ls:' + document.title;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) {}
+  document.querySelectorAll('input[data-ls]').forEach(b => {
+    if (saved[b.dataset.ls]) b.checked = true;
+    b.addEventListener('change', () => {
+      saved[b.dataset.ls] = b.checked;
+      localStorage.setItem(STORE, JSON.stringify(saved));
+    });
+  });
+})();
+</script>
+</body>
+</html>

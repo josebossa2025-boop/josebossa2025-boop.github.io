@@ -1,0 +1,128 @@
+{
+  "name": "Video Editor — Enviar a VPS",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "REEMPLAZA_CON_EL_ID_DE_TU_CARPETA_DE_DRIVE",
+          "mode": "list",
+          "cachedResultName": "Selecciona tu carpeta aquí"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "id": "43eaa6b4-b908-4481-ad56-9cc5243573ec",
+      "name": "Google Drive Trigger1",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "position": [
+        -272,
+        0
+      ],
+      "typeVersion": 1,
+      "notes": "CONFIGURAR: en 'folderToWatch' selecciona TU carpeta de Drive (la lista desplegable la busca sola). Asigna tu credencial de Google Drive OAuth2."
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "229638e1-0997-46d1-b4f0-7dc5a7a4ff89",
+      "name": "Download file1",
+      "notes": "Baja el video que acabas de subir. Usa la misma credencial de Google Drive."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://REEMPLAZA_CON_LA_IP_DE_TU_VPS:5051/process",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "title",
+              "value": "={{ $('Download file1').item.json.name.replace(/\\.[^.]+$/, '') }}"
+            },
+            {
+              "name": "webhook_url",
+              "value": "REEMPLAZA_CON_LA_URL_DEL_WEBHOOK_QUE_RECIBE_EL_RESULTADO"
+            },
+            {
+              "name": "api_secret",
+              "value": "REEMPLAZA_CON_EL_API_SECRET_DE_TU_.ENV"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 1000000
+        }
+      },
+      "id": "dcd6a1c0-1717-4209-8c3f-a1f8dc07be8a",
+      "name": "VPS — Enviar Video1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "notes": "CONFIGURAR 3 COSAS: (1) la URL con la IP de tu VPS, (2) webhook_url con la URL del nodo Webhook que recibe el resultado, (3) api_secret con el mismo valor que pusiste en el .env del servidor. El timeout alto es a propósito: el archivo de video tarda en subir."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "VPS — Enviar Video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "tags": []
+}
